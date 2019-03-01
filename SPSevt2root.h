@@ -18,6 +18,7 @@
 #include <cstdint>
 #include "ADCUnpacker.h"
 #include "mTDCUnpacker.h"
+#include "TRandom3.h"
 
 using namespace std;
 
@@ -38,6 +39,7 @@ class evt2root {
     string fileName;
     TFile *rootFile;
     TTree *DataTree;
+    TRandom3 *rand;
 
     //ROOT branch parameters
     Int_t adc1[32];

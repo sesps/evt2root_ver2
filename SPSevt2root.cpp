@@ -26,6 +26,7 @@ evt2root::evt2root() {
   adc3_geo = 5;
   tdc1_geo = 8;
   mtdc1_id = 9;
+  rand = new TRandom3();
 
 }
 
@@ -33,17 +34,25 @@ evt2root::evt2root() {
  *Does the heavy lifting of setting all non-raw channel paramters.
  */
 void evt2root::setParameters() {
-
-  if (mtdc1[2]>10 && mtdc1[1]>10){
-    fp_plane1_tdiff = (Float_t)(mtdc1[2]-mtdc1[1])/2*nanos_per_chan;
-    fp_plane1_tave = (Float_t) (mtdc1[2]+mtdc1[1])/2*nanos_per_chan;
-    fp_plane1_tsum = (Float_t) (mtdc1[2]+mtdc1[1])*nanos_per_chan;
+  Float_t r[4];
+  for (int i=0; i<4; i++) {
+    r[i] = rand->Rndm();//converting int to float; add uncert
+  }
+  Float_t mtdc102 = ((Float_t)mtdc1[2]+r[0])*nanos_per_chan; 
+  Float_t mtdc101 = ((Float_t)mtdc1[1]+r[1])*nanos_per_chan;
+  Float_t mtdc103 = ((Float_t)mtdc1[3]+r[2])*nanos_per_chan;
+  Float_t mtdc104 = ((Float_t)mtdc1[4]+r[3])*nanos_per_chan;
+ 
+  if (mtdc1[2]>10 && mtdc1[1]>10 && mtdc101<1e6 && mtdc102<1e6){// check if underflow or overflow
+    fp_plane1_tdiff = (mtdc102-mtdc101)/2.0;
+    fp_plane1_tave = (mtdc102+mtdc101)/2.0;
+    fp_plane1_tsum = (mtdc102+mtdc101);
   }
 
-  if (mtdc1[3]>10 && mtdc1[4]>10) {
-    fp_plane2_tdiff = (Float_t)(mtdc1[4]-mtdc1[3])/2*nanos_per_chan;
-    fp_plane2_tave = (Float_t) (mtdc1[4]+mtdc1[3])/2*nanos_per_chan;
-    fp_plane2_tsum = (Float_t) (mtdc1[4]+mtdc1[3])*nanos_per_chan;
+  if (mtdc1[3]>10 && mtdc1[4]>10 && mtdc103<1e6 && mtdc104<1e6) {
+    fp_plane2_tdiff = (mtdc104-mtdc103)/2.0;
+    fp_plane2_tave = (mtdc104+mtdc103)/2.0;
+    fp_plane2_tsum = (mtdc104+mtdc103);
   } 
     
   anode1 = adc3[4];
@@ -52,10 +61,10 @@ void evt2root::setParameters() {
   scint2 = adc3[9];
   cathode = adc3[8];
 
-  plastic_sum = (Float_t) (scint1+scint2);
-  anode1_time = (Float_t) mtdc1[5];
-  anode2_time = (Float_t) mtdc1[6];
-  plastic_time = (Float_t) mtdc1[7];
+  plastic_sum = ((Float_t)scint1+rand->Rndm())+((Float_t)scint2+rand->Rndm());
+  anode1_time = (Float_t)mtdc1[5]+rand->Rndm();
+  anode2_time = (Float_t)mtdc1[6]+rand->Rndm();
+  plastic_time = (Float_t)mtdc1[7]+rand->Rndm();
 
 }
 
@@ -144,6 +153,7 @@ void evt2root::unpack(uint16_t* eventPointer) {
  */
 int evt2root::run() {
 
+  DataTree = new TTree("DataTree", "DataTree");
   ifstream evtListFile;
   evtListFile.open(fileName.c_str());
   if (evtListFile.is_open()) {
@@ -160,7 +170,6 @@ int evt2root::run() {
   
   rootFile = new TFile(rootName, "RECREATE");
   cout<<"ROOT File: "<<temp<<endl;
-  DataTree = new TTree("DataTree", "DataTree");
   
   //Add branches here
   DataTree->Branch("adc1", &adc1, "adc1[32]/I");
