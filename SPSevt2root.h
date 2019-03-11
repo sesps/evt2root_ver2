@@ -31,6 +31,7 @@ class evt2root {
   private:
     void setParameters();
     void unpack(uint16_t* eventPointer);
+    void Reset();
     const int BufferWords = 13328; //I have no idea where this comes from; left over from past ver.
     const int BufferBytes = BufferWords*2;
     static const int BufferLength = 26656;//the same value as buffer bytes?

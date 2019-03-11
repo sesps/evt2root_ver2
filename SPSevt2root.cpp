@@ -30,6 +30,34 @@ evt2root::evt2root() {
 
 }
 
+void evt2root::Reset() {
+ 
+  for (int i = 0; i<32; i++) { 
+    adc1[i] = 0;
+    adc2[i] = 0;
+    adc3[i] = 0;
+    tdc1[i] = 0;
+    mtdc1[i] = 0;
+  }
+  anode1 = 0;
+  anode2 = 0;
+  scint1 = 0;
+  scint2 = 0;
+  cathode = 0;    
+  fp_plane1_tdiff = 0.0;
+  fp_plane2_tdiff = 0.0;
+  fp_plane1_tsum = 0.0;
+  fp_plane2_tsum = 0.0;
+  fp_plane1_tave = 0.0;
+  fp_plane2_tave = 0.0;
+  plastic_sum = 0.0;
+  anode1_time = 0.0;
+  anode2_time = 0.0;
+  plastic_time = 0.0;
+
+}
+
+
 /*setParameters()
  *Does the heavy lifting of setting all non-raw channel paramters.
  */
@@ -81,6 +109,7 @@ void evt2root::unpack(uint16_t* eventPointer) {
   vector<ParsedmTDCEvent> mtdcData;
   vector<ParsedADCEvent> adcData;
 
+  Reset();
 
   while (iterPointer<end && *iterPointer == 0xffff){
     iterPointer++;
@@ -118,7 +147,7 @@ void evt2root::unpack(uint16_t* eventPointer) {
     iterPointer = adc.first;
   }
   
-  while (iterPointer<end && *iterPointer == 0xffff){
+  while (iterPointer<end && *iterPointer == 0xfffff){
     iterPointer++;
   }
   if (iterPointer<end) {
@@ -143,7 +172,6 @@ void evt2root::unpack(uint16_t* eventPointer) {
   }
 
   setParameters();
-  DataTree->Fill();
 }
 
 /*run()
@@ -220,6 +248,7 @@ int evt2root::run() {
         switch (bufferType) {
           case 30: //Physics event buffer
              unpack(eventPointer);
+             DataTree->Fill();
              physBuffers++;
              break;
           case 1: //start of run buffer
