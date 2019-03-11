@@ -30,6 +30,9 @@ evt2root::evt2root() {
 
 }
 
+/* Reset()
+ * Each event needs to be processed separately; so clean the variables
+ */
 void evt2root::Reset() {
  
   for (int i = 0; i<32; i++) { 
@@ -71,18 +74,14 @@ void evt2root::setParameters() {
   Float_t mtdc103 = ((Float_t)mtdc1[3]+r[2])*nanos_per_chan;
   Float_t mtdc104 = ((Float_t)mtdc1[4]+r[3])*nanos_per_chan;
  
-  if (mtdc1[2]>10 && mtdc1[1]>10 && mtdc101<1e6 && mtdc102<1e6){// check if underflow or overflow
-    fp_plane1_tdiff = (mtdc102-mtdc101)/2.0;
-    fp_plane1_tave = (mtdc102+mtdc101)/2.0;
-    fp_plane1_tsum = (mtdc102+mtdc101);
-  }
-
-  if (mtdc1[3]>10 && mtdc1[4]>10 && mtdc103<1e6 && mtdc104<1e6) {
-    fp_plane2_tdiff = (mtdc104-mtdc103)/2.0;
-    fp_plane2_tave = (mtdc104+mtdc103)/2.0;
-    fp_plane2_tsum = (mtdc104+mtdc103);
-  } 
-    
+  fp_plane1_tdiff = (mtdc102-mtdc101)/2.0;
+  fp_plane1_tave = (mtdc102+mtdc101)/2.0;
+  fp_plane1_tsum = (mtdc102+mtdc101);
+  
+  fp_plane2_tdiff = (mtdc104-mtdc103)/2.0;
+  fp_plane2_tave = (mtdc104+mtdc103)/2.0;
+  fp_plane2_tsum = (mtdc104+mtdc103);
+   
   anode1 = adc3[4];
   anode2 = adc3[5];
   scint1 = adc3[6];
@@ -109,7 +108,7 @@ void evt2root::unpack(uint16_t* eventPointer) {
   vector<ParsedmTDCEvent> mtdcData;
   vector<ParsedADCEvent> adcData;
 
-  Reset();
+  Reset();//wipe variables
 
   while (iterPointer<end && *iterPointer == 0xffff){
     iterPointer++;
@@ -147,7 +146,7 @@ void evt2root::unpack(uint16_t* eventPointer) {
     iterPointer = adc.first;
   }
   
-  while (iterPointer<end && *iterPointer == 0xfffff){
+  while (iterPointer<end && *iterPointer == 0xffff){
     iterPointer++;
   }
   if (iterPointer<end) {
@@ -158,10 +157,18 @@ void evt2root::unpack(uint16_t* eventPointer) {
 
   for (auto& event : adcData) {
     for (auto& chanData : event.s_data) {
-      if (event.s_geo == adc1_geo) adc1[chanData.first] = chanData.second;
-      if (event.s_geo == adc2_geo) adc2[chanData.first] = chanData.second;
-      if (event.s_geo == adc3_geo) adc3[chanData.first] = chanData.second;
-      if (event.s_geo == tdc1_geo) tdc1[chanData.first] = chanData.second;
+      if (event.s_geo == adc1_geo) {
+         adc1[chanData.first] = chanData.second;
+      }
+      if (event.s_geo == adc2_geo) {
+        adc2[chanData.first] = chanData.second;
+      }
+      if (event.s_geo == adc3_geo) {
+        adc3[chanData.first] = chanData.second;
+      }
+      if (event.s_geo == tdc1_geo) {
+        tdc1[chanData.first] = chanData.second;
+      }
     }
   }
 
@@ -172,6 +179,7 @@ void evt2root::unpack(uint16_t* eventPointer) {
   }
 
   setParameters();
+  DataTree->Fill();
 }
 
 /*run()
@@ -248,7 +256,6 @@ int evt2root::run() {
         switch (bufferType) {
           case 30: //Physics event buffer
              unpack(eventPointer);
-             DataTree->Fill();
              physBuffers++;
              break;
           case 1: //start of run buffer
