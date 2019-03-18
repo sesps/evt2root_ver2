@@ -89,9 +89,9 @@ void evt2root::setParameters() {
   cathode = adc3[8];
 
   plastic_sum = ((Float_t)scint1+rand->Rndm())+((Float_t)scint2+rand->Rndm());
-  anode1_time = (Float_t)mtdc1[5]+rand->Rndm();
-  anode2_time = (Float_t)mtdc1[6]+rand->Rndm();
-  plastic_time = (Float_t)mtdc1[7]+rand->Rndm();
+  anode1_time = ((Float_t)mtdc1[5]+rand->Rndm())*nanos_per_chan;
+  anode2_time = ((Float_t)mtdc1[6]+rand->Rndm())*nanos_per_chan;
+  plastic_time = ((Float_t)mtdc1[7]+rand->Rndm())*nanos_per_chan;
 
 }
 
