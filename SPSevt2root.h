@@ -26,13 +26,14 @@ class evt2root {
 
   public:
     evt2root();
+    ~evt2root();
     int run();
  
   private:
     void setParameters();
     void unpack(uint16_t* eventPointer);
     void Reset();
-    const int BufferWords = 13328; //I have no idea where this comes from; left over from past ver.
+    const int BufferWords = 13328; //I have no idea where this comes from; left over from past ver
     const int BufferBytes = BufferWords*2;
     static const int BufferLength = 26656;//the same value as buffer bytes?
     char buffer[BufferLength];
