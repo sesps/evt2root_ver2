@@ -21,6 +21,8 @@ NOTE: This version is specifically designed to unpack data that come in reverse!
 #include <vector>
 #include <utility>
 #include <cstdint>
+#include <stdexcept>
+
 struct ParsedADCEvent {
   int s_geo;
   int s_crate;
@@ -31,7 +33,8 @@ struct ParsedADCEvent {
 
 class ADCUnpacker {
   public:
-    std::pair< uint16_t*, ParsedADCEvent> parse( uint16_t* begin,  uint16_t* end, int geo);
+    std::pair< uint16_t*, ParsedADCEvent> parse( uint16_t* begin,  uint16_t* end,
+                                                 std::vector<int> geos);
     bool isHeader(std::uint16_t word);
 
   private:

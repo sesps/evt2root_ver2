@@ -21,10 +21,17 @@ evt2root::evt2root() {
 
   cout << "Enter evt list  file: ";
   cin>>fileName;
+
+  adc1.resize(32); adc2.resize(32); adc3.resize(32); tdc1.resize(32); mtdc1.resize(32);
+
   adc1_geo = 3;//Set geo addresses here
+  adc_geos.push_back(adc1_geo);
   adc2_geo = 4;
+  adc_geos.push_back(adc2_geo);
   adc3_geo = 5;
+  adc_geos.push_back(adc3_geo);
   tdc1_geo = 8;
+  adc_geos.push_back(tdc1_geo);
   mtdc1_id = 9;
   rand = new TRandom3();
 
@@ -32,6 +39,8 @@ evt2root::evt2root() {
 //destructor
 evt2root::~evt2root() {
   delete rand;
+  delete rootFile;
+  delete DataTree;
 }
 
 /* Reset()
@@ -114,71 +123,32 @@ void evt2root::unpack(uint16_t* eventPointer) {
 
   Reset();//wipe variables
 
-  while (iterPointer<end && *iterPointer == 0xffff){
-    iterPointer++;
-  }
-  if (iterPointer<end) {
-    auto adc =  adc_unpacker.parse(iterPointer, end, adc1_geo);
-    adcData.push_back(adc.second);
-    iterPointer = adc.first;
-  }
-
-  while (iterPointer<end && *iterPointer == 0xffff){
-    iterPointer++;
-  }
-  if (iterPointer<end) {
-    auto adc =  adc_unpacker.parse(iterPointer, end, adc2_geo);
-    adcData.push_back(adc.second);
-    iterPointer = adc.first;
-  }
-
-  while (iterPointer<end && *iterPointer == 0xffff){
-    iterPointer++;
-  }
-  if (iterPointer<end) {
-    auto adc =  adc_unpacker.parse(iterPointer, end, adc3_geo);
-    adcData.push_back(adc.second);
-    iterPointer = adc.first;
-  }
-  
-  while (iterPointer<end && *iterPointer == 0xffff){
-    iterPointer++;
-  }
-  if (iterPointer<end) {
-    auto adc =  adc_unpacker.parse(iterPointer, end, tdc1_geo);
-    adcData.push_back(adc.second);
-    iterPointer = adc.first;
-  }
-  
-  while (iterPointer<end && *iterPointer == 0xffff){
-    iterPointer++;
-  }
-  if (iterPointer<end) {
-    auto mtdc = mtdc_unpacker.parse(iterPointer, end, mtdc1_id);
-    mtdcData.push_back(mtdc.second);
-    iterPointer = mtdc.first;
+  while (iterPointer<end){
+    //check if header matches; for adc looks like readout puts something like header
+    //after a EOE, skip those too
+    if (adc_unpacker.isHeader(*iterPointer) && *(iterPointer-1) != 0xffff) {
+      auto adc = adc_unpacker.parse(iterPointer-1, end, adc_geos);
+      adcData.push_back(adc.second);
+      iterPointer = adc.first;
+    } else if (mtdc_unpacker.isHeader(*iterPointer)) {
+      auto mtdc = mtdc_unpacker.parse(iterPointer-1, end, mtdc1_id);
+      mtdcData.push_back(mtdc.second);
+      iterPointer = mtdc.first;
+    } else iterPointer++;
   }
 
   for (auto& event : adcData) {
     for (auto& chanData : event.s_data) {
-      if (event.s_geo == adc1_geo) {
-         adc1[chanData.first] = chanData.second;
-      }
-      if (event.s_geo == adc2_geo) {
-        adc2[chanData.first] = chanData.second;
-      }
-      if (event.s_geo == adc3_geo) {
-        adc3[chanData.first] = chanData.second;
-      }
-      if (event.s_geo == tdc1_geo) {
-        tdc1[chanData.first] = chanData.second;
-      }
+      if (event.s_geo == adc1_geo) adc1[chanData.first] = chanData.second;
+      else if (event.s_geo == adc2_geo) adc2[chanData.first] = chanData.second;
+      else if (event.s_geo == adc3_geo) adc3[chanData.first] = chanData.second;
+      else if (event.s_geo == tdc1_geo) tdc1[chanData.first] = chanData.second;
     }
   }
 
   for(auto& event : mtdcData) {
     for(auto& chanData : event.s_data) {
-      mtdc1[chanData.first] = chanData.second;
+      if (event.s_id == mtdc1_id) mtdc1[chanData.first] = chanData.second;
     }
   }
 
@@ -212,11 +182,11 @@ int evt2root::run() {
   cout<<"ROOT File: "<<temp<<endl;
   
   //Add branches here
-  DataTree->Branch("adc1", &adc1, "adc1[32]/I");
-  DataTree->Branch("adc2", &adc2, "adc2[32]/I");
-  DataTree->Branch("adc3", &adc3, "adc3[32]/I");
-  DataTree->Branch("tdc1", &tdc1, "tdc1[32]/I");
-  DataTree->Branch("mtdc1", &mtdc1, "mtdc1[32]/I");
+  DataTree->Branch("adc1", &adc1);
+  DataTree->Branch("adc2", &adc2);
+  DataTree->Branch("adc3", &adc3);
+  DataTree->Branch("tdc1", &tdc1);
+  DataTree->Branch("mtdc1", &mtdc1);
   DataTree->Branch("fp_plane1_tdiff", &fp_plane1_tdiff, "fp_plane1_tdiff/F");
   DataTree->Branch("fp_plane1_tsum", &fp_plane1_tsum, "fp_plane1_tsum/F");
   DataTree->Branch("fp_plane1_tave", &fp_plane1_tdiff, "fp_plane1_tave/F");

@@ -21,7 +21,8 @@ using namespace std;
 
 //This is the main place where changes need to be made from one module to another; all else mostly name changes
 //useful masks and shifts for mTDC:
-static const uint16_t TYPE_MASK (0xc000);
+//in spectcl is just 0xc000, here use f to remove readout errors
+static const uint16_t TYPE_MASK (0xf000); 
 static const uint16_t TYPE_HDR (0x4000);
 static const uint16_t TYPE_DATA (0x0000);
 static const uint16_t TYPE_TRAIL (0xc000);
@@ -80,18 +81,30 @@ bool mTDCUnpacker::isHeader(uint16_t word) {
 }
 
 void mTDCUnpacker::unpackHeader(uint16_t* word, ParsedmTDCEvent& event) {
-  //Error testing
-  /*if (!isHeader(*(word+1))) {
-    cout<<"mTDCUnpacker::parseHeader() ";
-    cout<<"Found non-header word when expecting header. ";
-    cout<<"Word = ";
-    cout<<*(word+1)<<endl;
-  }*/
-
-  event.s_res = (*word&HDR_RES_MASK) >> HDR_RES_SHIFT;
-  event.s_count = (*word&HDR_COUNT_MASK) >> HDR_COUNT_SHIFT;
-  word++;
-  event.s_id = (*word&HDR_ID_MASK)>>HDR_ID_SHIFT;
+  //Error handling: if not valid header, throw to 0 at chan 0 and invalid id
+  try{ 
+    if (!isHeader(*(word+1))) {
+      string errmsg("mTDCUnpacker::parseHeader() ");
+      errmsg += "Found non-header word when expecting header. ";
+      errmsg +="Word = ";
+      unsigned int w = *(word+1);
+      errmsg += to_string(w);
+      throw errmsg;
+    }
+    event.s_res = (*word&HDR_RES_MASK) >> HDR_RES_SHIFT;
+    event.s_count = (*word&HDR_COUNT_MASK) >> HDR_COUNT_SHIFT;
+    word++;
+    event.s_id = (*word&HDR_ID_MASK)>>HDR_ID_SHIFT;
+  } catch(string errmsg) {
+    event.s_res = 0;
+    event.s_count = 1;
+    event.s_id = 99; //should NEVER match valid id
+    uint16_t data = 0;
+    int channel = 0;
+    auto chanData = make_pair(channel, data);
+    event.s_data.push_back(chanData);
+    //cout<<errmsg<<endl;//only use if testing
+  }
 
 }
 
@@ -100,18 +113,28 @@ bool mTDCUnpacker::isData(uint16_t word) {
 }
 
 void mTDCUnpacker::unpackDatum(uint16_t* word, ParsedmTDCEvent& event) {
-  //Error testing
-  /*if (!isData(*(word+1))) {
-    cout<<"mTDCUnpacker::unpackDatum() ";
-    cout<<"Found non-data word when expecting data: "<<*(word+1)<<endl;;
-  }*/
-
-  uint16_t data = *word&DATA_CONVMASK;
-  ++word;
-  int channel = (*word&DATA_CHANMASK) >> DATA_CHANSHIFT;
-
-  auto chanData = make_pair(channel, data);
-  event.s_data.push_back(chanData);
+  //Error handling: if not valid data, throw again
+  try {
+    if (!isData(*(word+1))) {
+      string errmsg("mTDCUnpacker::unpackDatum() ");
+      errmsg += "Found non-data word when expecting data.";
+      throw errmsg;
+    }
+    uint16_t data = *word&DATA_CONVMASK;
+    ++word;
+    int channel = (*word&DATA_CHANMASK) >> DATA_CHANSHIFT;
+    auto chanData = make_pair(channel, data);
+    event.s_data.push_back(chanData);
+  } catch(string errmsg) {
+    event.s_res = 0;
+    event.s_count = 1;
+    event.s_id = 99; //should NEVER match valid id
+    uint16_t data = 0;
+    int channel = 0;
+    auto chanData = make_pair(channel, data);
+    event.s_data.push_back(chanData);
+    //cout<<errmsg<<endl;//only use if testing
+  }
   
 }
 

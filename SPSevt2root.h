@@ -44,33 +44,15 @@ class evt2root {
     TRandom3 *rand;
 
     //ROOT branch parameters
-    Int_t adc1[32];
-    Int_t adc2[32];
-    Int_t adc3[32];
-    Int_t tdc1[32];
-    Int_t mtdc1[32];
-    Int_t anode1;
-    Int_t anode2;
-    Int_t scint1;
-    Int_t scint2;
-    Int_t cathode;    
-    Float_t fp_plane1_tdiff;
-    Float_t fp_plane2_tdiff;
-    Float_t fp_plane1_tsum;
-    Float_t fp_plane2_tsum;
-    Float_t fp_plane1_tave;
-    Float_t fp_plane2_tave;
-    Float_t plastic_sum;
-    Float_t anode1_time;
-    Float_t anode2_time;
-    Float_t plastic_time;
+    vector<Int_t> adc1, adc2, adc3, tdc1, mtdc1;
+    Int_t anode1, anode2, scint1, scint2, cathode;    
+    Float_t fp_plane1_tdiff, fp_plane2_tdiff, fp_plane1_tsum, fp_plane2_tsum,
+            fp_plane1_tave, fp_plane2_tave, plastic_sum, anode1_time, anode2_time,
+             plastic_time;
 
     //geoaddresses
-    int adc1_geo;
-    int adc2_geo;
-    int adc3_geo;
-    int tdc1_geo;
-    int mtdc1_id;
+    int adc1_geo, adc2_geo, adc3_geo, tdc1_geo, mtdc1_id;
+    vector<int> adc_geos;
 
     //module unpackers
     ADCUnpacker adc_unpacker;
