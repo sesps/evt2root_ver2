@@ -2,8 +2,14 @@
  *Takes .evt files from nscldaq 11 and converts them into .root files.
  *This version is kept up to date for the Super-Enge Splitpole at FSU, and was built
  *using a framework devised by Nabin, ddc, KTM et. al. in Dec 2015
+ *Also uses information provided by NSCL at:
+ *http://docs.nscl.msu.edu/daq/newsite/nscldaq-11.0/index.html
  *
  *Gordon M. Feb. 2019
+ *
+ *Updated to properly address ringbuffers, cut down on dynamic memory allocation,
+ *and remove dependance on stack ordering
+ *Gordon M. April 2019
  */
 
 
@@ -21,7 +27,8 @@ evt2root::evt2root() {
 
   cout << "Enter evt list  file: ";
   cin>>fileName;
-
+  
+  //Set the size of the vectors to match number of possible channels
   adc1.resize(32); adc2.resize(32); adc3.resize(32); tdc1.resize(32); mtdc1.resize(32);
 
   adc1_geo = 3;//Set geo addresses here
@@ -110,13 +117,13 @@ void evt2root::setParameters() {
 
 /*unpack()
  *This is where the file is actually parsed. Takes a short pointer and traverses the .evt file, 
- *calling each of the necessary modules as they are listed in the stack order. Current verison
- *requires knowledge of the stack order; possible area of improvement.
+ *calling each of the necessary modules to check first if there is a matching header. If yes, 
+ *being the parsing of the buffer. Checks to make sure its a valid geo/id
  */
 void evt2root::unpack(uint16_t* eventPointer) {
 
   uint16_t* iterPointer = eventPointer;
-  uint32_t numWords = *iterPointer++;
+  uint16_t numWords = *iterPointer++;
   uint16_t* end =  eventPointer + numWords+1;
   vector<ParsedmTDCEvent> mtdcData;
   vector<ParsedADCEvent> adcData;
@@ -206,34 +213,36 @@ int evt2root::run() {
   string evtName; 
   evtListFile >> evtName;
 
-  int physBuffers = 0; //can report number of event buffers; consistency check with spectcl
         
   while (!evtListFile.eof()) {
     ifstream evtFile;
     evtFile.clear(); //make sure that evtFile is always empty before trying a new one
     evtFile.open(evtName.c_str(), ios::binary);
+    int physBuffers = 0; //can report number of event buffers; consistency check with spectcl
     if (evtFile.is_open()) {
       cout<<"evt file: "<<evtName<<endl;
-      while (!evtFile.eof()) {
-        evtFile.read(buffer, 8);//take first 8 characters
-        evtFile.read(buffer+8, *(uint32_t*)buffer-8);//read the remainder
-        uint32_t subheader = *(uint32_t*)(buffer+8); //pull the subheader
-
-        if (subheader>0) {
-          cout <<"Unexpected subheader: " << subheader << endl; //relic from old version
+      char buffer[8];
+      while (evtFile.read(buffer, 8)) {
+        uint32_t ringSize = *(uint32_t*)buffer-8;
+        char ringBuffer[ringSize];
+        evtFile.read(ringBuffer, ringSize);//read the remainder
+        uint32_t bodyheader_size = *(uint32_t*)(ringBuffer); //pull the bodyheader size (bytes)
+        uint16_t *eventPointer;
+        if (bodyheader_size != 0) {
+          eventPointer = ((uint16_t*)ringBuffer)+bodyheader_size/2;//where we start a phys event
+        } else {
+          eventPointer = ((uint16_t*)ringBuffer)+2; //still have to skip word telling size
         }
-
-        auto eventPointer = ((uint16_t*)buffer)+6;//where we try to start a phys event
         auto bufferType = *(unsigned int*)(buffer+4);//determine what part of the file we're at
         int runNum;
 
         switch (bufferType) {
           case 30: //Physics event buffer
              unpack(eventPointer);
-             physBuffers++;
+             physBuffers += 1;
              break;
           case 1: //start of run buffer
-            runNum = *(eventPointer+8);
+            runNum = *(eventPointer);
             cout <<"Run number = "<<runNum<<endl;
             cout <<"Should match with file name: " <<evtName<<endl;
             break;

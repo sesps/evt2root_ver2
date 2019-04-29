@@ -1,20 +1,20 @@
-/*
-ADCUnpacker.cpp
+/*ADCUnpacker.cpp
+ *Class to parse through data coming from ADC 
+ *Most of the program's structure borrowed from 
+ *http://docs.nscl.msu.edu/daq/newsite/nscldaq-11.2/x5013.html
+ *Ken H. & Gordon M.
+ *Oct 2018
+ *
+ *This particular version is designed to work with SPSevt2root and uses 16-bit integer pointers 
+ *to traverse, instead of the spectcl 32-bit translator pointers. Possible area for improvement?
+ *Gordon M. Feb 2019
+ *
+ *Updated to better handle errors and work with a more general version of evt2root
+ *Gordon M. April 2019
+ *
+ *NOTE: This version is specifically designed to unpack data that come in reverse!!
+ */
 
-Class to parse through data coming from ADC 
-Most of the program's structure borrowed from http://docs.nscl.msu.edu/daq/newsite/nscldaq-11.2/x5013.html
-Ken H. & Gordon M.
-Oct 2018
-
-This particular version is designed to work with SPSevt2root and uses 16-bit integer pointers to
-traverse, instead of the spectcl 32-bit translator pointers. Possible area for improvement?
-Gordon M. Feb 2019
-
-Updated to better handle errors and work with a more general version of evt2root
-Gordon M. April 2019
-
-NOTE: This version is specifically designed to unpack data that come in reverse!!
-*/
 #include "ADCUnpacker.h"
 #include <string>
 #include <iostream>
@@ -69,7 +69,7 @@ pair< uint16_t*, ParsedADCEvent> ADCUnpacker::parse( uint16_t* begin,  uint16_t*
     bad_flag = 1;
     iter+=nWords;
     //Error testing
-    cout<<"Bad ADC geo: "<<event.s_geo<<endl;  
+    //cout<<"Bad ADC geo: "<<event.s_geo<<endl;  
   } else {
     iter = unpackData(iter, dataEnd, event);
   }

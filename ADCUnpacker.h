@@ -1,18 +1,19 @@
-/*
-ADCUnpacker.h
-
-class to parse through data coming from adc
-most of the program's structure borrowed from http://docs.nscl.msu.edu/daq/newsite/nscldaq-11.2/x5013.html
-ken h. & gordon m.
-oct 2018
-
-This particular version is designed to work with SPSevt2root and uses 16-bit integer pointers to 
-traverse, instead of the spectcl 32-bit translator pointers. Possible area for improvement?
-Gordon M. Feb 2019
-
-NOTE: This version is specifically designed to unpack data that come in reverse!!
-*/
-
+/*ADCUnpacker.h
+ *Class to parse through data coming from ADC 
+ *Most of the program's structure borrowed from 
+ *http://docs.nscl.msu.edu/daq/newsite/nscldaq-11.2/x5013.html
+ *Ken H. & Gordon M.
+ *Oct 2018
+ *
+ *This particular version is designed to work with SPSevt2root and uses 16-bit integer pointers 
+ *to traverse, instead of the spectcl 32-bit translator pointers. Possible area for improvement?
+ *Gordon M. Feb 2019
+ *
+ *Updated to better handle errors and work with a more general version of evt2root
+ *Gordon M. April 2019
+ *
+ *NOTE: This version is specifically designed to unpack data that come in reverse!!
+ */
 
 
 #ifndef adcunpacker_h

@@ -2,10 +2,15 @@
  *Takes .evt files from nscldaq 11 and converts them into .root files.
  *This version is kept up to date for the Super-Enge Splitpole at FSU, and was built
  *using a framework devised by Nabin, ddc, KTM et. al. in Dec 2015
+ *Also uses information provided by NSCL at:
+ *http://docs.nscl.msu.edu/daq/newsite/nscldaq-11.0/index.html
  *
  *Gordon M. Feb. 2019
+ *
+ *Updated to properly address ringbuffers, cut down on dynamic memory allocation,
+ *and remove dependance on stack ordering
+ *Gordon M. April 2019
  */
-
 
 #ifndef SPSEVT2ROOT_H
 #define SPSEVT2ROOT_H
@@ -33,10 +38,6 @@ class evt2root {
     void setParameters();
     void unpack(uint16_t* eventPointer);
     void Reset();
-    const int BufferWords = 13328; //I have no idea where this comes from; left over from past ver
-    const int BufferBytes = BufferWords*2;
-    static const int BufferLength = 26656;//the same value as buffer bytes?
-    char buffer[BufferLength];
     Float_t nanos_per_chan = 0.0625;//ps->ns conv. for mtdc
     string fileName;
     TFile *rootFile;

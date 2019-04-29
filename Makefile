@@ -11,5 +11,7 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 .cpp.o:
 	$(CC) $(CFLAGS) $< -o $@
+
+.PHONY: clean
 clean:
 	rm ./*.o ./evt2root
