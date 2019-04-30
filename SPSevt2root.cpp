@@ -18,6 +18,7 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <unistd.h>
 
 using namespace std;
@@ -120,10 +121,19 @@ void evt2root::setParameters() {
  *calling each of the necessary modules to check first if there is a matching header. If yes, 
  *being the parsing of the buffer. Checks to make sure its a valid geo/id
  */
-void evt2root::unpack(uint16_t* eventPointer) {
+void evt2root::unpack(uint16_t* eventPointer, uint32_t ringSize) {
 
   uint16_t* iterPointer = eventPointer;
-  uint16_t numWords = *iterPointer++;
+  uint32_t numWords = *iterPointer++;
+  try {
+    if(numWords>ringSize) {
+      string size_err = "Incorrectly formated physics ring!";
+      throw size_err;
+    }
+  } catch (string size_err) {
+    //cout<<size_err<<endl; //for testing
+    return;
+  }
   uint16_t* end =  eventPointer + numWords+1;
   vector<ParsedmTDCEvent> mtdcData;
   vector<ParsedADCEvent> adcData;
@@ -238,8 +248,9 @@ int evt2root::run() {
 
         switch (bufferType) {
           case 30: //Physics event buffer
-             unpack(eventPointer);
+             unpack(eventPointer, ringSize);
              physBuffers += 1;
+             cout<<"\rNumber of physics buffers: "<<physBuffers<<flush;
              break;
           case 1: //start of run buffer
             runNum = *(eventPointer);
@@ -253,7 +264,7 @@ int evt2root::run() {
       rootFile->Close();
       return 0;
     }
-    cout<<"Number of physics buffers: "<<physBuffers<<endl;
+    cout<<endl;
     evtFile.close();
     evtFile.clear();
     evtListFile >> evtName;
@@ -261,5 +272,6 @@ int evt2root::run() {
 
   DataTree->Write();
   rootFile->Close();
+  cout<<"Conversion complete"<<endl;
   return 1;
 }

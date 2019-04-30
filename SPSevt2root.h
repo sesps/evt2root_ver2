@@ -36,7 +36,7 @@ class evt2root {
  
   private:
     void setParameters();
-    void unpack(uint16_t* eventPointer);
+    void unpack(uint16_t* eventPointer, uint32_t ringSize);
     void Reset();
     Float_t nanos_per_chan = 0.0625;//ps->ns conv. for mtdc
     string fileName;
