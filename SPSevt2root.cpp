@@ -57,30 +57,43 @@ evt2root::~evt2root() {
 void evt2root::Reset() {
  
   for (int i = 0; i<32; i++) { 
-    adc1[i] = 0;
-    adc2[i] = 0;
-    adc3[i] = 0;
-    tdc1[i] = 0;
-    mtdc1[i] = 0;
+    adc1[i] = -1000;
+    adc2[i] = -1000;
+    adc3[i] = -1000;
+    tdc1[i] = -1000;
+    mtdc1[i] = -1000;
   }
-  anode1 = 0;
-  anode2 = 0;
-  scint1 = 0;
-  scint2 = 0;
-  cathode = 0;    
-  fp_plane1_tdiff = 0.0;
-  fp_plane2_tdiff = 0.0;
-  fp_plane1_tsum = 0.0;
-  fp_plane2_tsum = 0.0;
-  fp_plane1_tave = 0.0;
-  fp_plane2_tave = 0.0;
-  plastic_sum = 0.0;
-  anode1_time = 0.0;
-  anode2_time = 0.0;
-  plastic_time = 0.0;
+  anode1 = -1000;
+  anode2 = -1000;
+  scint1 = -1000;
+  scint2 = -1000;
+  cathode = -1000;    
+  fp_plane1_tdiff = -1000.0;
+  fp_plane2_tdiff = -1000.0;
+  fp_plane1_tsum = -1000.0;
+  fp_plane2_tsum = -1000.0;
+  fp_plane1_tave = -1000.0;
+  fp_plane2_tave = -1000.0;
+  plastic_sum = -1000.0;
+  anode1_time = -1000.0;
+  anode2_time = -1000.0;
+  plastic_time = -1000.0;
 
 }
 
+/*Rebin()
+ *Eliminates beating pattern from raw mtdc data
+ *by accounting for binning uncertainty
+ */
+void evt2root::Rebin(vector<Int_t> &module) {
+  for (unsigned int i=0; i<32; i++) {
+    if(module[i] != 0) {
+      Float_t r = rand->Uniform(0.,1.0);
+      Float_t value = module[i]+r;
+      module[i] = (Int_t) value;
+    }
+  }
+}
 
 /*setParameters()
  *Does the heavy lifting of setting all non-raw channel paramters.
@@ -169,6 +182,7 @@ void evt2root::unpack(uint16_t* eventPointer, uint32_t ringSize) {
     }
   }
 
+  Rebin(mtdc1); Rebin(adc1); Rebin(adc2); Rebin(adc3); Rebin(tdc1);
   setParameters();
   DataTree->Fill();
 }
